@@ -23,3 +23,7 @@ go.work.sum
 
 # executables
 todo
+
+# files
+*.csv
+*.sql
