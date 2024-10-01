@@ -2,17 +2,14 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"os"
 
-	"github.com/ncfex/todo-app/internal/task"
-	"github.com/ncfex/todo-app/internal/utils"
+	"github.com/ncfex/todo-app/internal/cmd"
 )
 
 func main() {
-
-	newTask := task.Task{
-		Opened: time.Now(),
+	if err := cmd.RootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-
-	fmt.Println(utils.HumanReadableTime(newTask.Opened))
 }
