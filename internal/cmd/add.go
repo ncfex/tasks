@@ -3,12 +3,12 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/ncfex/todo-app/internal/task"
+	"github.com/ncfex/tasks/internal/task"
 	"github.com/spf13/cobra"
 )
 
 var AddCommand = &cobra.Command{
-	Use:   "Add",
+	Use:   "add",
 	Short: "Add a new TODO",
 	Long:  "Add a new todo item to your list",
 	Run: func(cC *cobra.Command, args []string) {

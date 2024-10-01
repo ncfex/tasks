@@ -1,4 +1,4 @@
-module github.com/ncfex/todo-app
+module github.com/ncfex/tasks
 
 go 1.22.5
 

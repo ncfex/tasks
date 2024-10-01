@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ncfex/todo-app/internal/cmd"
+	"github.com/ncfex/tasks/internal/cmd"
 )
 
 func main() {
