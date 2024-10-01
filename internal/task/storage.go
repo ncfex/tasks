@@ -2,29 +2,63 @@ package task
 
 import (
 	"encoding/csv"
+	"fmt"
 	"os"
 	"strconv"
+	"syscall"
 	"time"
 )
 
-const filename = "todos.csv"
+const filepath = "todos.csv"
+
+func loadFile(filepath string) (*os.File, error) {
+	file, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, os.ModePerm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file for reading: %w", err)
+	}
+
+	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX); err != nil {
+		_ = file.Close()
+		return nil, fmt.Errorf("failed to lock file: %w", err)
+	}
+
+	return file, nil
+}
+
+func closeFile(file *os.File) error {
+	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_UN); err != nil {
+		return fmt.Errorf("failed to unlock file: %w", err)
+	}
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("failed to close file: %w", err)
+	}
+	return nil
+}
 
 func SaveTask(t Task) error {
-	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-
 	tasks, err := GetAllTasks()
 	if err != nil {
 		return err
 	}
-
 	t.ID = len(tasks) + 1
+
+	file, err := loadFile(filepath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := closeFile(file); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+
+	_, err = file.Seek(0, 2)
+	if err != nil {
+		return fmt.Errorf("failed to seek to end of file: %w", err)
+	}
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
 
 	record := []string{
 		strconv.Itoa(t.ID),
@@ -37,10 +71,15 @@ func SaveTask(t Task) error {
 }
 
 func GetAllTasks() ([]Task, error) {
-	file, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0644)
+	file, err := loadFile(filepath)
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if cerr := closeFile(file); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
 
 	reader := csv.NewReader(file)
 	records, err := reader.ReadAll()
