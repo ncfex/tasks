@@ -20,11 +20,3 @@ go.work.sum
 
 # env file
 .env
-
-# executables
-todo
-tasks
-
-# files
-*.csv
-*.sql
