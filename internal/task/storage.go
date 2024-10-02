@@ -70,6 +70,71 @@ func SaveTask(t Task) error {
 	return writer.Write(record)
 }
 
+func CompleteTask(id int) error {
+	t, err := GetTaskById(id)
+	if err != nil {
+		return err
+	}
+
+	tasks, err := GetAllTasks()
+	if err != nil {
+		return err
+	}
+
+	file, err := loadFile(filepath)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := closeFile(file); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+
+	for i := 0; i < len(tasks); i++ {
+		if tasks[i].ID == t.ID {
+			tasks[i].Completed = true
+		}
+	}
+
+	var records [][]string
+	for _, t := range tasks {
+		record := []string{
+			strconv.Itoa(t.ID),
+			t.Description,
+			strconv.FormatBool(t.Completed),
+			t.CreatedAt.Format(time.RFC3339),
+		}
+
+		records = append(records, record)
+	}
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	err = writer.WriteAll(records)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetTaskById(id int) (Task, error) {
+	tasks, err := GetAllTasks()
+	if err != nil {
+		return Task{}, err
+	}
+
+	for _, task := range tasks {
+		if task.ID == id {
+			return task, nil
+		}
+	}
+
+	return Task{}, fmt.Errorf("No Task found with this ID: %d", id)
+}
+
 func GetAllTasks() ([]Task, error) {
 	file, err := loadFile(filepath)
 	if err != nil {
