@@ -1,7 +1,11 @@
 package utils
 
-import "time"
+import (
+	"time"
+
+	"github.com/mergestat/timediff"
+)
 
 func HumanReadableTime(time time.Time) string {
-	return time.GoString()
+	return timediff.TimeDiff(time)
 }
