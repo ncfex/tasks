@@ -36,7 +36,7 @@ func closeFile(file *os.File) error {
 }
 
 func SaveTask(t Task) error {
-	tasks, err := GetAllTasks()
+	tasks, err := GetAllTasks(NewTaskSelector(), &TaskFilter{})
 	if err != nil {
 		return err
 	}
@@ -63,11 +63,26 @@ func SaveTask(t Task) error {
 	record := []string{
 		strconv.Itoa(t.ID),
 		t.Description,
-		strconv.FormatBool(t.Completed),
+		strconv.FormatBool(t.IsCompleted),
 		t.CreatedAt.Format(time.RFC3339),
 	}
 
 	return writer.Write(record)
+}
+
+func GetTaskById(id int) (Task, error) {
+	tasks, err := GetAllTasks(NewTaskSelector(), &TaskFilter{})
+	if err != nil {
+		return Task{}, err
+	}
+
+	for _, task := range tasks {
+		if task.ID == id {
+			return task, nil
+		}
+	}
+
+	return Task{}, fmt.Errorf("No Task found with this ID: %d", id)
 }
 
 func CompleteTask(id int) error {
@@ -76,7 +91,7 @@ func CompleteTask(id int) error {
 		return err
 	}
 
-	tasks, err := GetAllTasks()
+	tasks, err := GetAllTasks(NewTaskSelector(), &TaskFilter{})
 	if err != nil {
 		return err
 	}
@@ -93,7 +108,7 @@ func CompleteTask(id int) error {
 
 	for i := 0; i < len(tasks); i++ {
 		if tasks[i].ID == t.ID {
-			tasks[i].Completed = true
+			tasks[i].IsCompleted = true
 		}
 	}
 
@@ -102,7 +117,7 @@ func CompleteTask(id int) error {
 		record := []string{
 			strconv.Itoa(t.ID),
 			t.Description,
-			strconv.FormatBool(t.Completed),
+			strconv.FormatBool(t.IsCompleted),
 			t.CreatedAt.Format(time.RFC3339),
 		}
 
@@ -120,22 +135,14 @@ func CompleteTask(id int) error {
 	return nil
 }
 
-func GetTaskById(id int) (Task, error) {
-	tasks, err := GetAllTasks()
-	if err != nil {
-		return Task{}, err
+func GetAllTasks(selector *TaskSelector, filter *TaskFilter) ([]Task, error) {
+	if selector == nil {
+		selector = NewTaskSelector()
+	}
+	if filter == nil {
+		filter = NewTaskFilter()
 	}
 
-	for _, task := range tasks {
-		if task.ID == id {
-			return task, nil
-		}
-	}
-
-	return Task{}, fmt.Errorf("No Task found with this ID: %d", id)
-}
-
-func GetAllTasks() ([]Task, error) {
 	file, err := loadFile(filepath)
 	if err != nil {
 		return nil, err
@@ -154,15 +161,26 @@ func GetAllTasks() ([]Task, error) {
 
 	var tasks []Task
 	for _, record := range records {
-		id, _ := strconv.Atoi(record[0])
-		completed, _ := strconv.ParseBool(record[2])
-		createdAt, _ := time.Parse(time.RFC3339, record[3])
+		task := Task{}
 
-		task := Task{
-			ID:          id,
-			Description: record[1],
-			Completed:   completed,
-			CreatedAt:   createdAt,
+		if selector.Fields[TaskFieldID] {
+			task.ID, _ = strconv.Atoi(record[0])
+		}
+
+		if selector.Fields[TaskFieldDescription] {
+			task.Description = record[1]
+		}
+
+		isCompleted, _ := strconv.ParseBool(record[2])
+		if !filter.IncludeCompleted && isCompleted {
+			continue
+		}
+		if selector.Fields[TaskFieldIsCompleted] {
+			task.IsCompleted = isCompleted
+		}
+
+		if selector.Fields[TaskFieldCreatedAt] {
+			task.CreatedAt, _ = time.Parse(time.RFC3339, record[3])
 		}
 
 		tasks = append(tasks, task)

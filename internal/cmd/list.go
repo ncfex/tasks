@@ -2,33 +2,79 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"text/tabwriter"
 
 	"github.com/ncfex/tasks/internal/task"
+	"github.com/ncfex/tasks/internal/utils"
 	"github.com/spf13/cobra"
+)
+
+var (
+	showAll         bool
+	selectedColumns []string
+	defaultColumns  = []string{"id", "description", "created"}
 )
 
 var ListCommand = &cobra.Command{
 	Use:   "list",
 	Short: "List all todos",
 	Long:  `Display a list of all your todos`,
-	Run: func(cC *cobra.Command, args []string) {
-		tasks, err := task.GetAllTasks()
-		if err != nil {
-			fmt.Printf("Error retrieving todos: %v\n", err)
-			return
-		}
+	RunE:  runList,
+}
 
-		if len(tasks) == 0 {
-			fmt.Println("No todos found.")
-			return
-		}
+func init() {
+	ListCommand.Flags().BoolVarP(&showAll, "show-all", "A", false, "Show all tasks (including completed ones)")
+	ListCommand.Flags().StringSliceVarP(&selectedColumns, "columns", "c", defaultColumns, "Specify columns to display")
+}
 
-		for _, task := range tasks {
-			status := "[ ]"
-			if task.Completed {
-				status = "[x]"
-			}
-			fmt.Printf("%s %d: %s\n", status, task.ID, task.Description)
+func runList(cmd *cobra.Command, args []string) error {
+	filter := &task.TaskFilter{
+		IncludeCompleted: showAll,
+	}
+
+	selector := task.NewTaskSelector(
+		task.TaskFieldID,
+		task.TaskFieldDescription,
+		task.TaskFieldCreatedAt,
+		task.TaskFieldIsCompleted,
+	)
+
+	tasks, err := task.GetAllTasks(selector, filter)
+	if err != nil {
+		return fmt.Errorf("error retrieving todos: %v", err)
+	}
+
+	if len(tasks) == 0 {
+		fmt.Println("No todos found.")
+		return nil
+	}
+
+	writer := tabwriter.NewWriter(os.Stdout, 0, 2, 4, ' ', 0)
+	defer writer.Flush()
+
+	headers := defaultColumns
+	fmt.Fprintln(writer, joinWithTabs(headers))
+
+	for _, t := range tasks {
+		row := []string{
+			fmt.Sprintf("%d", t.ID),
+			t.Description,
+			utils.HumanReadableTime(t.CreatedAt),
 		}
-	},
+		fmt.Fprintln(writer, joinWithTabs(row))
+	}
+
+	return nil
+}
+
+func joinWithTabs(strings []string) string {
+	result := ""
+	for i, s := range strings {
+		if i > 0 {
+			result += "\t"
+		}
+		result += s
+	}
+	return result
 }
