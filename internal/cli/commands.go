@@ -47,25 +47,52 @@ var columns = map[string]Column{
 		Header: strings.ToUpper(string(task.TaskFieldCreatedAt)),
 		Field:  task.TaskFieldCreatedAt,
 		Formatter: func(t task.Task) string {
-			return utils.HumanReadableTime(t.CreatedAt)
+			return utils.FormatTimeToHuman(t.CreatedAt)
+		},
+	},
+	string(task.TaskFieldDueDate): {
+		Header: strings.ToUpper(string(task.TaskFieldDueDate)),
+		Field:  task.TaskFieldDueDate,
+		Formatter: func(t task.Task) string {
+			return utils.FormatTimeToHuman(t.DueDate)
 		},
 	},
 }
 
 func newAddCommand(service task.TaskService) *cobra.Command {
-	return &cobra.Command{
+	var dueDateString string
+
+	cmd := &cobra.Command{
 		Use:   "add [description]",
 		Short: "Add a new task",
+		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			task, err := service.Create(args[0])
-			if err != nil {
-				return fmt.Errorf("failed to create task: %w", err)
-			}
-
-			fmt.Printf("Task created with ID: %d\n", task.ID)
-			return nil
+			return runAdd(service, args[0], dueDateString)
 		},
 	}
+
+	cmd.Flags().StringVarP(&dueDateString, "due", "d", "", "Due date for the task")
+
+	return cmd
+}
+
+func runAdd(service task.TaskService, description string, dueDate string) error {
+	if dueDate == "" {
+		dueDate = "tomorrow"
+	}
+
+	dueDateTime, err := utils.ParseHumanToTime(dueDate)
+	if err != nil {
+		return fmt.Errorf("failed to create task: %w", err)
+	}
+
+	task, err := service.Create(description, dueDateTime)
+	if err != nil {
+		return fmt.Errorf("failed to create task: %w", err)
+	}
+
+	fmt.Printf("Task created with ID: %d\n", task.ID)
+	return nil
 }
 
 func newListCommand(service task.TaskService) *cobra.Command {
@@ -85,6 +112,7 @@ func newListCommand(service task.TaskService) *cobra.Command {
 		string(task.TaskFieldDescription),
 		string(task.TaskFieldIsCompleted),
 		string(task.TaskFieldCreatedAt),
+		string(task.TaskFieldDueDate),
 	}
 
 	cmd.Flags().BoolVarP(&showAll, "all", "a", false, "Show all tasks (including completed)")
