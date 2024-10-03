@@ -6,6 +6,6 @@ import (
 	"github.com/mergestat/timediff"
 )
 
-func HumanReadableTime(time time.Time) string {
-	return timediff.TimeDiff(time)
+func FormatTimeToHuman(t time.Time) string {
+	return timediff.TimeDiff(t)
 }
