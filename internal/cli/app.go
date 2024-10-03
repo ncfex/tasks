@@ -72,5 +72,6 @@ func (a *App) setupCommands() {
 		newAddCommand(a),
 		newListCommand(a),
 		newCompleteCommand(a),
+		newDeleteCommand(a),
 	)
 }

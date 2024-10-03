@@ -110,7 +110,6 @@ func newListCommand(a *App) *cobra.Command {
 	defaultColumns := []string{
 		string(task.TaskFieldID),
 		string(task.TaskFieldDescription),
-		string(task.TaskFieldIsCompleted),
 		string(task.TaskFieldCreatedAt),
 		string(task.TaskFieldDueDate),
 	}
@@ -183,6 +182,27 @@ func newCompleteCommand(a *App) *cobra.Command {
 			}
 
 			fmt.Printf("Task %d marked as completed\n", id)
+			return nil
+		},
+	}
+}
+
+func newDeleteCommand(a *App) *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete [task_id]",
+		Short: "Delete a task from TODOs",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			id, err := strconv.Atoi(args[0])
+			if err != nil {
+				return fmt.Errorf("invalid task ID: %w", err)
+			}
+
+			if err := a.service.Delete(id); err != nil {
+				return fmt.Errorf("failed to delete task: %w", err)
+			}
+
+			fmt.Printf("Task %d is deleted\n", id)
 			return nil
 		},
 	}
