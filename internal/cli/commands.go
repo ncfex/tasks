@@ -59,7 +59,7 @@ var columns = map[string]Column{
 	},
 }
 
-func newAddCommand(service task.TaskService) *cobra.Command {
+func newAddCommand(a *App) *cobra.Command {
 	var dueDateString string
 
 	cmd := &cobra.Command{
@@ -67,7 +67,7 @@ func newAddCommand(service task.TaskService) *cobra.Command {
 		Short: "Add a new task",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runAdd(service, args[0], dueDateString)
+			return runAdd(a.service, args[0], dueDateString)
 		},
 	}
 
@@ -95,7 +95,7 @@ func runAdd(service task.TaskService, description string, dueDate string) error 
 	return nil
 }
 
-func newListCommand(service task.TaskService) *cobra.Command {
+func newListCommand(a *App) *cobra.Command {
 	var showAll bool
 	var selectedColumns []string
 
@@ -103,7 +103,7 @@ func newListCommand(service task.TaskService) *cobra.Command {
 		Use:   "list",
 		Short: "List all tasks",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runList(service, showAll, selectedColumns)
+			return runList(a.service, showAll, selectedColumns)
 		},
 	}
 
@@ -167,7 +167,7 @@ func runList(service task.TaskService, showAll bool, selectedColumns []string) e
 	return nil
 }
 
-func newCompleteCommand(service task.TaskService) *cobra.Command {
+func newCompleteCommand(a *App) *cobra.Command {
 	return &cobra.Command{
 		Use:   "complete [task_id]",
 		Short: "Mark a task as completed",
@@ -178,7 +178,7 @@ func newCompleteCommand(service task.TaskService) *cobra.Command {
 				return fmt.Errorf("invalid task ID: %w", err)
 			}
 
-			if err := service.Complete(id); err != nil {
+			if err := a.service.Complete(id); err != nil {
 				return fmt.Errorf("failed to complete task: %w", err)
 			}
 
