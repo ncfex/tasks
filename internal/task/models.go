@@ -12,6 +12,7 @@ const (
 	TaskFieldDescription TaskField = "description"
 	TaskFieldIsCompleted TaskField = "is_completed"
 	TaskFieldCreatedAt   TaskField = "created_at"
+	TaskFieldDueDate     TaskField = "due_date"
 )
 
 type Task struct {
@@ -19,6 +20,7 @@ type Task struct {
 	Description string    `json:"description"`
 	IsCompleted bool      `json:"is_completed"`
 	CreatedAt   time.Time `json:"created_at"`
+	DueDate     time.Time `json:"due_date"`
 }
 
 type TaskSelector struct {
@@ -37,7 +39,7 @@ func NewTaskSelector(fields ...TaskField) *TaskSelector {
 	if len(fields) == 0 {
 		selector.Fields[TaskFieldID] = true
 		selector.Fields[TaskFieldDescription] = true
-		selector.Fields[TaskFieldIsCompleted] = true
+		selector.Fields[TaskFieldDueDate] = true
 		selector.Fields[TaskFieldCreatedAt] = true
 		return selector
 	}

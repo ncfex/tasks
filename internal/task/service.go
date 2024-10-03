@@ -5,7 +5,7 @@ import (
 )
 
 type TaskService interface {
-	Create(description string) (*Task, error)
+	Create(description string, dueDate time.Time) (*Task, error)
 	GetByID(id int) (*Task, error)
 	List(selector *TaskSelector, filter *TaskFilter) ([]Task, error)
 	Complete(id int) error
@@ -21,11 +21,12 @@ func NewService(repository Repository) TaskService {
 	}
 }
 
-func (s *service) Create(description string) (*Task, error) {
+func (s *service) Create(description string, dueDate time.Time) (*Task, error) {
 	task := &Task{
 		Description: description,
 		IsCompleted: false,
 		CreatedAt:   time.Now(),
+		DueDate:     dueDate,
 	}
 
 	if err := task.Validate(); err != nil {

@@ -17,7 +17,7 @@ type repository struct {
 	mu       sync.Mutex
 }
 
-func NewRepository(filepath string) task.Repository {
+func NewRepository(filepath string) *repository {
 	return &repository{
 		filepath: filepath,
 	}
@@ -120,19 +120,21 @@ func (r *repository) readTasks() ([]task.Task, error) {
 
 	var tasks []task.Task
 	for _, record := range records {
-		if len(record) != 4 {
+		if len(record) != 5 {
 			continue
 		}
 
 		id, _ := strconv.Atoi(record[0])
 		isCompleted, _ := strconv.ParseBool(record[2])
 		createdAt, _ := time.Parse(time.RFC3339, record[3])
+		dueDate, _ := time.Parse(time.RFC3339, record[4])
 
 		task := task.Task{
 			ID:          id,
 			Description: record[1],
 			IsCompleted: isCompleted,
 			CreatedAt:   createdAt,
+			DueDate:     dueDate,
 		}
 		tasks = append(tasks, task)
 	}
@@ -160,6 +162,7 @@ func (r *repository) writeTasks(tasks []task.Task) error {
 			t.Description,
 			strconv.FormatBool(t.IsCompleted),
 			t.CreatedAt.Format(time.RFC3339),
+			t.DueDate.Format(time.RFC3339),
 		}
 
 		if err := writer.Write(record); err != nil {
