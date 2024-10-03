@@ -1,13 +1,11 @@
-package csv
+package json
 
 import (
-	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"sync"
-	"time"
 
 	"github.com/ncfex/tasks/internal/task"
 )
@@ -29,7 +27,7 @@ func (r *repository) Save(t *task.Task) error {
 
 	tasks, err := r.readTasks()
 	if err != nil {
-		return fmt.Errorf("failed to read tasks: %w", err)
+		return err
 	}
 
 	t.ID = r.nextID(tasks)
@@ -108,35 +106,23 @@ func (r *repository) readTasks() ([]task.Task, error) {
 
 	file, err := os.OpenFile(r.filepath, os.O_RDONLY, 0644)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return nil, err
 	}
 	defer file.Close()
 
-	reader := csv.NewReader(file)
-	records, err := reader.ReadAll()
+	fileInfo, err := file.Stat()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read CSV: %w", err)
+		return nil, err
+	}
+
+	if fileInfo.Size() == 0 {
+		return []task.Task{}, nil
 	}
 
 	var tasks []task.Task
-	for _, record := range records {
-		if len(record) != 5 {
-			continue
-		}
-
-		id, _ := strconv.Atoi(record[0])
-		isCompleted, _ := strconv.ParseBool(record[2])
-		createdAt, _ := time.Parse(time.RFC3339, record[3])
-		dueDate, _ := time.Parse(time.RFC3339, record[4])
-
-		task := task.Task{
-			ID:          id,
-			Description: record[1],
-			IsCompleted: isCompleted,
-			CreatedAt:   createdAt,
-			DueDate:     dueDate,
-		}
-		tasks = append(tasks, task)
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&tasks); err != nil {
+		return nil, fmt.Errorf("decode tasks: %w", err)
 	}
 
 	return tasks, nil
@@ -153,21 +139,13 @@ func (r *repository) writeTasks(tasks []task.Task) error {
 	}
 	defer file.Close()
 
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
+	data, err := json.Marshal(tasks)
+	if err != nil {
+		return fmt.Errorf("marshal tasks: %w", err)
+	}
 
-	for _, t := range tasks {
-		record := []string{
-			strconv.Itoa(t.ID),
-			t.Description,
-			strconv.FormatBool(t.IsCompleted),
-			t.CreatedAt.Format(time.RFC3339),
-			t.DueDate.Format(time.RFC3339),
-		}
-
-		if err := writer.Write(record); err != nil {
-			return fmt.Errorf("failed to write record: %w", err)
-		}
+	if _, err := file.Write(data); err != nil {
+		return fmt.Errorf("write file: %w", err)
 	}
 
 	return nil
@@ -184,7 +162,11 @@ func (r *repository) ensureFile() error {
 		if err != nil {
 			return fmt.Errorf("failed to create file: %w", err)
 		}
-		// TODO WRITE HEADERS
+
+		_, err = file.Write([]byte("[]"))
+		if err != nil {
+			return err
+		}
 		file.Close()
 	}
 
