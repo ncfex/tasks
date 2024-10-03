@@ -101,6 +101,34 @@ func (r *repository) Update(t *task.Task) error {
 	return r.writeTasks(tasks)
 }
 
+func (r *repository) Delete(t *task.Task) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	tasks, err := r.readTasks()
+	if err != nil {
+		return fmt.Errorf("failed to read tasks: %w", err)
+	}
+
+	found := false
+	indexToRemove := -1
+	for i, task := range tasks {
+		if task.ID == t.ID {
+			indexToRemove = i
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return task.ErrTaskNotFound
+	}
+
+	tasks = append(tasks[:indexToRemove], tasks[indexToRemove+1:]...)
+
+	return r.writeTasks(tasks)
+}
+
 func (r *repository) readTasks() ([]task.Task, error) {
 	if err := r.ensureFile(); err != nil {
 		return nil, err
