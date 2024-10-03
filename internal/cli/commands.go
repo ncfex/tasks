@@ -83,7 +83,7 @@ func runAdd(service task.TaskService, description string, dueDate string) error 
 
 	dueDateTime, err := utils.ParseHumanToTime(dueDate)
 	if err != nil {
-		return fmt.Errorf("failed to create task: %w", err)
+		return fmt.Errorf("failed to create parse date: %w", err)
 	}
 
 	task, err := service.Create(description, dueDateTime)

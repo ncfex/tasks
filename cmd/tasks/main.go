@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/ncfex/tasks/internal/cli"
-	"github.com/ncfex/tasks/internal/storage/csv"
+	"github.com/ncfex/tasks/internal/storage/json"
 	"github.com/ncfex/tasks/internal/task"
 )
 
@@ -21,8 +21,11 @@ func main() {
 		log.Fatalf("Failed to create storage directory: %v", err)
 	}
 
-	storagePath := filepath.Join(storageDir, "tasks.csv")
-	repository := csv.NewRepository(storagePath)
+	// storagePath := filepath.Join(storageDir, "tasks.csv")
+	storagePath := filepath.Join(storageDir, "tasks.json")
+
+	// repository := csv.NewRepository(storagePath)
+	repository := json.NewRepository(storagePath)
 
 	service := task.NewService(repository)
 
