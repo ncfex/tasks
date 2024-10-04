@@ -73,6 +73,41 @@ func (q *Queries) DeleteTask(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const getAllCompletedTasks = `-- name: GetAllCompletedTasks :many
+SELECT id, description, is_completed, created_at, due_date 
+FROM tasks
+WHERE is_completed = TRUE
+`
+
+func (q *Queries) GetAllCompletedTasks(ctx context.Context) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getAllCompletedTasks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.Description,
+			&i.IsCompleted,
+			&i.CreatedAt,
+			&i.DueDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllTasks = `-- name: GetAllTasks :many
 SELECT id, description, is_completed, created_at, due_date 
 FROM tasks

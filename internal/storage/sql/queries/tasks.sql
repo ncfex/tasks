@@ -13,6 +13,11 @@ RETURNING *;
 SELECT * 
 FROM tasks;
 
+-- name: GetAllCompletedTasks :many
+SELECT * 
+FROM tasks
+WHERE is_completed = TRUE;
+
 -- name: GetTaskById :one
 SELECT *
 FROM tasks

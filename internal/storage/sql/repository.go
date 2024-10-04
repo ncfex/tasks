@@ -83,7 +83,14 @@ func (r *repository) GetTaskByPartialId(uuid string) (*task.Task, error) {
 }
 
 func (r *repository) List(selector *task.TaskSelector, filter *task.TaskFilter) ([]task.Task, error) {
-	sqlTasks, err := r.db.GetAllTasks(context.Background())
+	var sqlTasks []database.Task
+	var err error
+
+	if filter.IncludeCompleted {
+		sqlTasks, err = r.db.GetAllTasks(context.Background())
+	} else {
+		sqlTasks, err = r.db.GetAllCompletedTasks(context.Background())
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +103,7 @@ func (r *repository) List(selector *task.TaskSelector, filter *task.TaskFilter) 
 }
 
 func (r *repository) Update(t *task.Task) error {
-	sqlTask := r.toSQLTask(t)
-	_, err := r.db.CompleteTask(context.Background(), sqlTask.ID)
+	_, err := r.db.CompleteTask(context.Background(), t.ID)
 	if err != nil {
 		return err
 	}
