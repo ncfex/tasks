@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -114,6 +115,26 @@ WHERE id = $1
 
 func (q *Queries) GetTaskById(ctx context.Context, id uuid.UUID) (Task, error) {
 	row := q.db.QueryRowContext(ctx, getTaskById, id)
+	var i Task
+	err := row.Scan(
+		&i.ID,
+		&i.Description,
+		&i.IsCompleted,
+		&i.CreatedAt,
+		&i.DueDate,
+	)
+	return i, err
+}
+
+const getTaskByPartialId = `-- name: GetTaskByPartialId :one
+SELECT id, description, is_completed, created_at, due_date
+FROM tasks
+WHERE id::text LIKE $1 || '%'
+LIMIT 1
+`
+
+func (q *Queries) GetTaskByPartialId(ctx context.Context, dollar_1 sql.NullString) (Task, error) {
+	row := q.db.QueryRowContext(ctx, getTaskByPartialId, dollar_1)
 	var i Task
 	err := row.Scan(
 		&i.ID,

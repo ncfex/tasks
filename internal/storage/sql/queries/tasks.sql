@@ -18,6 +18,12 @@ SELECT *
 FROM tasks
 WHERE id = $1;
 
+-- name: GetTaskByPartialId :one
+SELECT *
+FROM tasks
+WHERE id::text LIKE $1 || '%'
+LIMIT 1;
+
 -- name: CompleteTask :one
 UPDATE tasks
 SET is_completed = TRUE
