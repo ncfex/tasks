@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -55,6 +56,35 @@ func (r *repository) GetByID(id uuid.UUID) (*task.Task, error) {
 	}
 
 	return nil, task.ErrTaskNotFound
+}
+
+func (r *repository) GetTaskByPartialId(id string) (*task.Task, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	tasks, err := r.readTasks()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read tasks: %w", err)
+	}
+
+	var foundTask *task.Task
+	matchCount := 0
+
+	for _, t := range tasks {
+		if strings.HasPrefix(t.ID.String(), id) {
+			foundTask = &t
+			matchCount++
+		}
+	}
+
+	switch matchCount {
+	case 0:
+		return nil, task.ErrTaskNotFound
+	case 1:
+		return foundTask, nil
+	default:
+		return nil, fmt.Errorf("multiple tasks found with partial ID %s", id)
+	}
 }
 
 func (r *repository) List(selector *task.TaskSelector, filter *task.TaskFilter) ([]task.Task, error) {

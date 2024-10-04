@@ -66,6 +66,21 @@ func (r *repository) GetByID(uuid uuid.UUID) (*task.Task, error) {
 	return &domainTask, nil
 }
 
+func (r *repository) GetTaskByPartialId(uuid string) (*task.Task, error) {
+	nullUUID := sql.NullString{
+		String: uuid,
+		Valid:  true,
+	}
+
+	sqlTask, err := r.db.GetTaskByPartialId(context.Background(), nullUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	domainTask := r.toDomainTask(sqlTask)
+	return &domainTask, nil
+}
+
 func (r *repository) List(selector *task.TaskSelector, filter *task.TaskFilter) ([]task.Task, error) {
 	sqlTasks, err := r.db.GetAllTasks(context.Background())
 	if err != nil {
