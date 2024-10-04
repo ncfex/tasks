@@ -17,7 +17,7 @@ type repository struct {
 	mu       sync.Mutex
 }
 
-func NewRepository(filepath string) *repository {
+func NewRepository(filepath string) task.Repository {
 	return &repository{
 		filepath: filepath,
 	}
