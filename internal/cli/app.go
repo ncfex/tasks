@@ -8,6 +8,7 @@ import (
 
 	"github.com/ncfex/tasks/internal/storage/csv"
 	"github.com/ncfex/tasks/internal/storage/json"
+	"github.com/ncfex/tasks/internal/storage/sql"
 	"github.com/ncfex/tasks/internal/task"
 	"github.com/spf13/cobra"
 )
@@ -55,6 +56,15 @@ func (a *App) initializeService() error {
 	case "csv":
 		storagePath := filepath.Join(storageDir, "tasks.csv")
 		repository = csv.NewRepository(storagePath)
+	case "sql":
+		dbURL := os.Getenv("DB_URL")
+		if dbURL == "" {
+			log.Fatalf("Failed to get DB string")
+		}
+		repository, err = sql.NewRepository(dbURL)
+		if err != nil {
+			return fmt.Errorf("%w", err)
+		}
 	default:
 		return fmt.Errorf("unsupported format: %s", a.format)
 	}
