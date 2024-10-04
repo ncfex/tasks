@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ncfex/tasks/internal/task"
 )
 
@@ -32,13 +33,15 @@ func (r *repository) Save(t *task.Task) error {
 		return fmt.Errorf("failed to read tasks: %w", err)
 	}
 
-	t.ID = r.nextID(tasks)
+	if t.ID == uuid.Nil {
+		t.ID = uuid.New()
+	}
 	tasks = append(tasks, *t)
 
 	return r.writeTasks(tasks)
 }
 
-func (r *repository) GetByID(id int) (*task.Task, error) {
+func (r *repository) GetByID(id uuid.UUID) (*task.Task, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -152,7 +155,10 @@ func (r *repository) readTasks() ([]task.Task, error) {
 			continue
 		}
 
-		id, _ := strconv.Atoi(record[0])
+		id, err := uuid.Parse(record[0])
+		if err != nil {
+			continue
+		}
 		isCompleted, _ := strconv.ParseBool(record[2])
 		createdAt, _ := time.Parse(time.RFC3339, record[3])
 		dueDate, _ := time.Parse(time.RFC3339, record[4])
@@ -186,7 +192,7 @@ func (r *repository) writeTasks(tasks []task.Task) error {
 
 	for _, t := range tasks {
 		record := []string{
-			strconv.Itoa(t.ID),
+			t.ID.String(),
 			t.Description,
 			strconv.FormatBool(t.IsCompleted),
 			t.CreatedAt.Format(time.RFC3339),
@@ -217,14 +223,4 @@ func (r *repository) ensureFile() error {
 	}
 
 	return nil
-}
-
-func (r *repository) nextID(tasks []task.Task) int {
-	maxID := 0
-	for _, t := range tasks {
-		if t.ID > maxID {
-			maxID = t.ID
-		}
-	}
-	return maxID + 1
 }

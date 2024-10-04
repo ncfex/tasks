@@ -2,14 +2,16 @@ package task
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type TaskService interface {
 	Create(description string, dueDate time.Time) (*Task, error)
-	GetByID(id int) (*Task, error)
+	GetByID(id uuid.UUID) (*Task, error)
 	List(selector *TaskSelector, filter *TaskFilter) ([]Task, error)
-	Complete(id int) error
-	Delete(id int) error
+	Complete(id uuid.UUID) error
+	Delete(id uuid.UUID) error
 }
 
 type service struct {
@@ -41,7 +43,7 @@ func (s *service) Create(description string, dueDate time.Time) (*Task, error) {
 	return task, nil
 }
 
-func (s *service) GetByID(id int) (*Task, error) {
+func (s *service) GetByID(id uuid.UUID) (*Task, error) {
 	task, err := s.repository.GetByID(id)
 	if err != nil {
 		return nil, &Error{Op: "GetByID", Err: err}
@@ -64,7 +66,7 @@ func (s *service) List(selector *TaskSelector, filter *TaskFilter) ([]Task, erro
 	return tasks, nil
 }
 
-func (s *service) Complete(id int) error {
+func (s *service) Complete(id uuid.UUID) error {
 	task, err := s.repository.GetByID(id)
 	if err != nil {
 		return &Error{Op: "Complete", Err: err}
@@ -78,7 +80,7 @@ func (s *service) Complete(id int) error {
 	return nil
 }
 
-func (s *service) Delete(id int) error {
+func (s *service) Delete(id uuid.UUID) error {
 	task, err := s.repository.GetByID(id)
 	if err != nil {
 		return &Error{Op: "Delete", Err: err}

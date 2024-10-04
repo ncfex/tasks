@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/ncfex/tasks/internal/task"
 )
 
@@ -30,13 +31,15 @@ func (r *repository) Save(t *task.Task) error {
 		return err
 	}
 
-	t.ID = r.nextID(tasks)
+	if t.ID == uuid.Nil {
+		t.ID = uuid.New()
+	}
 	tasks = append(tasks, *t)
 
 	return r.writeTasks(tasks)
 }
 
-func (r *repository) GetByID(id int) (*task.Task, error) {
+func (r *repository) GetByID(id uuid.UUID) (*task.Task, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -167,13 +170,9 @@ func (r *repository) writeTasks(tasks []task.Task) error {
 	}
 	defer file.Close()
 
-	data, err := json.Marshal(tasks)
-	if err != nil {
-		return fmt.Errorf("marshal tasks: %w", err)
-	}
-
-	if _, err := file.Write(data); err != nil {
-		return fmt.Errorf("write file: %w", err)
+	encoder := json.NewEncoder(file)
+	if err := encoder.Encode(tasks); err != nil {
+		return fmt.Errorf("encode tasks: %w", err)
 	}
 
 	return nil
@@ -191,22 +190,12 @@ func (r *repository) ensureFile() error {
 			return fmt.Errorf("failed to create file: %w", err)
 		}
 
-		_, err = file.Write([]byte("[]"))
-		if err != nil {
-			return err
+		defer file.Close()
+		encoder := json.NewEncoder(file)
+		if err := encoder.Encode([]task.Task{}); err != nil {
+			return fmt.Errorf("failed to initialize JSON file: %w", err)
 		}
-		file.Close()
 	}
 
 	return nil
-}
-
-func (r *repository) nextID(tasks []task.Task) int {
-	maxID := 0
-	for _, t := range tasks {
-		if t.ID > maxID {
-			maxID = t.ID
-		}
-	}
-	return maxID + 1
 }

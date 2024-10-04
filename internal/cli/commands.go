@@ -3,10 +3,10 @@ package cli
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 
+	"github.com/google/uuid"
 	"github.com/ncfex/tasks/internal/task"
 	"github.com/ncfex/tasks/internal/utils"
 	"github.com/spf13/cobra"
@@ -23,7 +23,7 @@ var columns = map[string]Column{
 		Header: strings.ToUpper(string(task.TaskFieldID)),
 		Field:  task.TaskFieldID,
 		Formatter: func(t task.Task) string {
-			return fmt.Sprintf("%d", t.ID)
+			return t.ID.String()
 		},
 	},
 	string(task.TaskFieldDescription): {
@@ -91,7 +91,7 @@ func runAdd(service task.TaskService, description string, dueDate string) error 
 		return fmt.Errorf("failed to create task: %w", err)
 	}
 
-	fmt.Printf("Task created with ID: %d\n", task.ID)
+	fmt.Printf("Task created with ID: %s\n", task.ID.String())
 	return nil
 }
 
@@ -172,7 +172,7 @@ func newCompleteCommand(a *App) *cobra.Command {
 		Short: "Mark a task as completed",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id, err := strconv.Atoi(args[0])
+			id, err := uuid.Parse(args[0])
 			if err != nil {
 				return fmt.Errorf("invalid task ID: %w", err)
 			}
@@ -181,7 +181,7 @@ func newCompleteCommand(a *App) *cobra.Command {
 				return fmt.Errorf("failed to complete task: %w", err)
 			}
 
-			fmt.Printf("Task %d marked as completed\n", id)
+			fmt.Printf("Task %s marked as completed\n", id.String())
 			return nil
 		},
 	}
@@ -193,7 +193,7 @@ func newDeleteCommand(a *App) *cobra.Command {
 		Short: "Delete a task from TODOs",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id, err := strconv.Atoi(args[0])
+			id, err := uuid.Parse(args[0])
 			if err != nil {
 				return fmt.Errorf("invalid task ID: %w", err)
 			}
@@ -202,7 +202,7 @@ func newDeleteCommand(a *App) *cobra.Command {
 				return fmt.Errorf("failed to delete task: %w", err)
 			}
 
-			fmt.Printf("Task %d is deleted\n", id)
+			fmt.Printf("Task %s is deleted\n", id.String())
 			return nil
 		},
 	}
