@@ -52,7 +52,8 @@ func (r *repository) Save(t *task.Task) error {
 		DueDate:     sqlTask.DueDate,
 	}
 
-	_, err := r.db.CreateTask(context.Background(), params)
+	rT, err := r.db.CreateTask(context.Background(), params)
+	t.ID = rT.ID
 	return err
 }
 

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/google/uuid"
 	"github.com/ncfex/tasks/internal/task"
 	"github.com/ncfex/tasks/internal/utils"
 	"github.com/spf13/cobra"
@@ -23,7 +22,7 @@ var columns = map[string]Column{
 		Header: strings.ToUpper(string(task.TaskFieldID)),
 		Field:  task.TaskFieldID,
 		Formatter: func(t task.Task) string {
-			return t.ID.String()
+			return t.ID.String()[0:8]
 		},
 	},
 	string(task.TaskFieldDescription): {
@@ -91,7 +90,7 @@ func runAdd(service task.TaskService, description string, dueDate string) error 
 		return fmt.Errorf("failed to create task: %w", err)
 	}
 
-	fmt.Printf("Task created with ID: %s\n", task.ID.String())
+	fmt.Printf("Task created with ID: %s\n", task.ID.String()[0:8])
 	return nil
 }
 
@@ -172,16 +171,12 @@ func newCompleteCommand(a *App) *cobra.Command {
 		Short: "Mark a task as completed",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id, err := uuid.Parse(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid task ID: %w", err)
-			}
-
-			if err := a.service.Complete(id); err != nil {
+			idString := args[0]
+			if err := a.service.Complete(idString); err != nil {
 				return fmt.Errorf("failed to complete task: %w", err)
 			}
 
-			fmt.Printf("Task %s marked as completed\n", id.String())
+			fmt.Printf("Task %s marked as completed\n", idString)
 			return nil
 		},
 	}
@@ -193,16 +188,12 @@ func newDeleteCommand(a *App) *cobra.Command {
 		Short: "Delete a task from TODOs",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			id, err := uuid.Parse(args[0])
-			if err != nil {
-				return fmt.Errorf("invalid task ID: %w", err)
-			}
-
-			if err := a.service.Delete(id); err != nil {
+			idString := args[0]
+			if err := a.service.Delete(idString); err != nil {
 				return fmt.Errorf("failed to delete task: %w", err)
 			}
 
-			fmt.Printf("Task %s is deleted\n", id.String())
+			fmt.Printf("Task %s is deleted\n", idString)
 			return nil
 		},
 	}
