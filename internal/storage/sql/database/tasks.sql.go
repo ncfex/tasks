@@ -74,9 +74,9 @@ func (q *Queries) DeleteTask(ctx context.Context, id uuid.UUID) error {
 }
 
 const getAllCompletedTasks = `-- name: GetAllCompletedTasks :many
-SELECT id, description, is_completed, created_at, due_date 
+SELECT id, description, is_completed, created_at, due_date
 FROM tasks
-WHERE is_completed = TRUE
+WHERE is_completed::boolean = TRUE
 `
 
 func (q *Queries) GetAllCompletedTasks(ctx context.Context) ([]Task, error) {

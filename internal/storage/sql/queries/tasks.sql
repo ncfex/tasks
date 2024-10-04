@@ -14,9 +14,9 @@ SELECT *
 FROM tasks;
 
 -- name: GetAllCompletedTasks :many
-SELECT * 
+SELECT *
 FROM tasks
-WHERE is_completed = TRUE;
+WHERE is_completed::boolean = TRUE;
 
 -- name: GetTaskById :one
 SELECT *
