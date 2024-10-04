@@ -3,6 +3,8 @@ package task
 import (
 	"errors"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type TaskField string
@@ -16,7 +18,7 @@ const (
 )
 
 type Task struct {
-	ID          int       `json:"id"`
+	ID          uuid.UUID `json:"id"`
 	Description string    `json:"description"`
 	IsCompleted bool      `json:"is_completed"`
 	CreatedAt   time.Time `json:"created_at"`
