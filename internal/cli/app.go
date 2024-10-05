@@ -39,7 +39,7 @@ func NewApp() *App {
 		},
 	}
 
-	app.rootCmd.PersistentFlags().StringVarP(&app.format, "format", "m", "json", "Storage format (json or csv)")
+	app.rootCmd.PersistentFlags().StringVarP(&app.format, "format", "m", string(app.cfg.ServiceMode), "Storage format (json or csv)")
 
 	app.setupCommands()
 	return app

@@ -34,7 +34,7 @@ func (c *Config) Load() error {
 	}
 
 	if c.ServiceMode == "" {
-		c.ServiceMode = ServiceModeSQL
+		c.ServiceMode = ServiceModeJSON
 	}
 
 	updatedData, err := json.Marshal(c)
