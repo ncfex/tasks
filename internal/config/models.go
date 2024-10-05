@@ -1,5 +1,7 @@
 package config
 
+import "github.com/ncfex/tasks/internal/task"
+
 type ServiceMode string
 
 const (
@@ -9,6 +11,7 @@ const (
 )
 
 type Config struct {
-	filepath    string
-	ServiceMode ServiceMode `json:"service_mode"`
+	filepath       string
+	ServiceMode    ServiceMode      `json:"service_mode"`
+	DisplayColumns []task.TaskField `json:"display_columns"`
 }

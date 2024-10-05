@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/ncfex/tasks/internal/task"
 )
 
 func (c *Config) Load() error {
@@ -51,7 +53,15 @@ func (c *Config) Load() error {
 
 func (c *Config) UpdateServiceMode(mode ServiceMode) error {
 	c.ServiceMode = mode
+	return c.writeToFile()
+}
 
+func (c *Config) UpdateDisplayColumns(columns []task.TaskField) error {
+	c.DisplayColumns = columns
+	return c.writeToFile()
+}
+
+func (c *Config) writeToFile() error {
 	data, err := json.Marshal(c)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
