@@ -59,6 +59,14 @@ var columns = map[string]Column{
 	},
 }
 
+var defaultColumns = []task.TaskField{
+	task.TaskFieldID,
+	task.TaskFieldDescription,
+	task.TaskFieldCreatedAt,
+	task.TaskFieldDueDate,
+	task.TaskFieldIsCompleted,
+}
+
 func newAddCommand(a *App) *cobra.Command {
 	var dueDateString string
 
@@ -98,39 +106,76 @@ func runAdd(service task.TaskService, description string, dueDate string) error 
 func newListCommand(a *App) *cobra.Command {
 	var showAll bool
 	var selectedColumns []string
+	var saveColumns bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all tasks",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runList(a.service, showAll, selectedColumns)
+			if len(a.cfg.DisplayColumns) == 0 {
+				if err := a.cfg.UpdateDisplayColumns(defaultColumns); err != nil {
+					return fmt.Errorf("failed to set default columns: %w", err)
+				}
+			}
+
+			var columnsToUse []string
+			if len(selectedColumns) > 0 {
+				selectedTaskFields := make([]task.TaskField, len(selectedColumns))
+				for i, col := range selectedColumns {
+					selectedTaskFields[i] = task.TaskField(col)
+				}
+
+				if saveColumns {
+					if err := a.cfg.UpdateDisplayColumns(selectedTaskFields); err != nil {
+						return fmt.Errorf("failed to update display columns in config: %w", err)
+					}
+				}
+
+				columnsToUse = selectedColumns
+			} else {
+				columnsToUse = make([]string, 0, len(a.cfg.DisplayColumns))
+				for _, col := range a.cfg.DisplayColumns {
+					columnsToUse = append(columnsToUse, string(col))
+				}
+			}
+
+			return runList(a.service, showAll, columnsToUse)
 		},
 	}
 
-	defaultColumns := []string{
-		string(task.TaskFieldID),
-		string(task.TaskFieldDescription),
-		string(task.TaskFieldCreatedAt),
-		string(task.TaskFieldDueDate),
+	displayColumnsString := make([]string, 0, len(a.cfg.DisplayColumns))
+	for _, c := range a.cfg.DisplayColumns {
+		displayColumnsString = append(displayColumnsString, string(c))
 	}
 
 	cmd.Flags().BoolVarP(&showAll, "all", "a", false, "Show all tasks (including completed)")
-	cmd.Flags().StringSliceVarP(&selectedColumns, "columns", "c", defaultColumns, "Columns to display")
+	cmd.Flags().StringSliceVarP(&selectedColumns, "columns", "c", displayColumnsString, "Columns to display")
+	cmd.Flags().BoolVarP(&saveColumns, "save", "s", false, "Save selected columns to config")
 
 	return cmd
 }
 
 func runList(service task.TaskService, showAll bool, selectedColumns []string) error {
-	var displayColumns []Column
-	var selectedFields []task.TaskField
+	displayColumns := make([]Column, 0, len(selectedColumns))
+	selectedFields := make([]task.TaskField, 0, len(selectedColumns))
 
-	for _, colName := range selectedColumns {
-		col, exists := columns[colName]
-		if !exists {
-			return fmt.Errorf("invalid column: %s", colName)
+	if len(selectedColumns) == 0 {
+		displayColumns = make([]Column, 0, len(columns))
+		selectedFields = make([]task.TaskField, 0, len(columns))
+
+		for _, col := range columns {
+			displayColumns = append(displayColumns, col)
+			selectedFields = append(selectedFields, col.Field)
 		}
-		displayColumns = append(displayColumns, col)
-		selectedFields = append(selectedFields, col.Field)
+	} else {
+		for _, colName := range selectedColumns {
+			col, exists := columns[colName]
+			if !exists {
+				return fmt.Errorf("invalid column: %s", colName)
+			}
+			displayColumns = append(displayColumns, col)
+			selectedFields = append(selectedFields, col.Field)
+		}
 	}
 
 	selector := task.NewTaskSelector(selectedFields...)
@@ -149,14 +194,15 @@ func runList(service task.TaskService, showAll bool, selectedColumns []string) e
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', tabwriter.TabIndent)
 	defer w.Flush()
 
-	var headers []string
+	headers := make([]string, 0, len(displayColumns))
 	for _, col := range displayColumns {
 		headers = append(headers, col.Header)
 	}
 	fmt.Fprintln(w, strings.Join(headers, "\t"))
 
+	row := make([]string, 0, len(displayColumns))
 	for _, t := range tasks {
-		var row []string
+		row = row[:0]
 		for _, col := range displayColumns {
 			row = append(row, col.Formatter(t))
 		}
