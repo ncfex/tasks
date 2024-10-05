@@ -108,6 +108,41 @@ func (q *Queries) GetAllCompletedTasks(ctx context.Context) ([]Task, error) {
 	return items, nil
 }
 
+const getAllDueTasks = `-- name: GetAllDueTasks :many
+SELECT id, description, is_completed, created_at, due_date
+FROM tasks
+WHERE is_completed::boolean = FALSE
+`
+
+func (q *Queries) GetAllDueTasks(ctx context.Context) ([]Task, error) {
+	rows, err := q.db.QueryContext(ctx, getAllDueTasks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Task
+	for rows.Next() {
+		var i Task
+		if err := rows.Scan(
+			&i.ID,
+			&i.Description,
+			&i.IsCompleted,
+			&i.CreatedAt,
+			&i.DueDate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getAllTasks = `-- name: GetAllTasks :many
 SELECT id, description, is_completed, created_at, due_date 
 FROM tasks

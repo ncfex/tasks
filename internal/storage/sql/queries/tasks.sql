@@ -18,6 +18,11 @@ SELECT *
 FROM tasks
 WHERE is_completed::boolean = TRUE;
 
+-- name: GetAllDueTasks :many
+SELECT *
+FROM tasks
+WHERE is_completed::boolean = FALSE;
+
 -- name: GetTaskById :one
 SELECT *
 FROM tasks

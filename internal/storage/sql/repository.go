@@ -89,7 +89,7 @@ func (r *repository) List(selector *task.TaskSelector, filter *task.TaskFilter) 
 	if filter.IncludeCompleted {
 		sqlTasks, err = r.db.GetAllTasks(context.Background())
 	} else {
-		sqlTasks, err = r.db.GetAllCompletedTasks(context.Background())
+		sqlTasks, err = r.db.GetAllDueTasks(context.Background())
 	}
 	if err != nil {
 		return nil, err
