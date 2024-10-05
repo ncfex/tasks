@@ -6,6 +6,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/ncfex/tasks/internal/config"
 	"github.com/ncfex/tasks/internal/task"
 	"github.com/ncfex/tasks/internal/utils"
 	"github.com/spf13/cobra"
@@ -197,4 +198,30 @@ func newDeleteCommand(a *App) *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newUpdateServiceModeCommand(a *App) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "set-mode [mode]",
+		Short: "Update default storage mode",
+		Long:  "Update the default storage mode (sql, json, or csv) for the tasks application",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			mode := config.ServiceMode(args[0])
+			switch mode {
+			case config.ServiceModeSQL, config.ServiceModeJSON, config.ServiceModeCSV:
+			default:
+				return fmt.Errorf("invalid mode: %s. Must be one of: sql, json, csv", mode)
+			}
+
+			if err := a.cfg.UpdateServiceMode(mode); err != nil {
+				return fmt.Errorf("failed to update service mode: %w", err)
+			}
+
+			fmt.Printf("Successfully updated default storage mode to: %s\n", mode)
+			return nil
+		},
+	}
+
+	return cmd
 }

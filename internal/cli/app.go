@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ncfex/tasks/internal/config"
 	"github.com/ncfex/tasks/internal/storage/csv"
 	"github.com/ncfex/tasks/internal/storage/json"
 	"github.com/ncfex/tasks/internal/storage/sql"
@@ -17,10 +18,17 @@ type App struct {
 	rootCmd *cobra.Command
 	service task.TaskService
 	format  string
+	cfg     *config.Config
 }
 
 func NewApp() *App {
 	app := &App{}
+	app.cfg = &config.Config{}
+
+	err := app.cfg.Load()
+	if err != nil {
+		log.Fatalf("Failed to create storage directory: %v", err)
+	}
 
 	app.rootCmd = &cobra.Command{
 		Use:   "tasks",
@@ -83,5 +91,6 @@ func (a *App) setupCommands() {
 		newListCommand(a),
 		newCompleteCommand(a),
 		newDeleteCommand(a),
+		newUpdateServiceModeCommand(a),
 	)
 }
